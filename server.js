@@ -37,6 +37,7 @@ io.sockets.on("connection", (client) => {
       if(playerDB[i].id == id) {
         playerDB.splice(i, 1);
         console.log(`${id} has disconnected`);
+        client.broadcast.emit("new_position_data", playerDB);
         break;
       }
     }

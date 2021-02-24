@@ -1,10 +1,9 @@
 let camera;
 const CAM_SIZE = 700;
-let player_position;
+let player;
 
 let socket;
 
-let movement = [false, false, false, false];
 let position_list = [];
 let id = "";
 
@@ -21,7 +20,7 @@ function setup() {
     camera.resize(aspect_ratio * CAM_SIZE, CAM_SIZE);
   }
 
-  player_position = createVector(0, 0);
+  player = new Player(0, 0);
 
   socket.on("get_id", getID);
   socket.on("new_position_data", getPos);
@@ -38,46 +37,36 @@ function someone(data) {
 function draw() {
   background(0);
 
-  if(movement[0]) {
-    player_position.y -= 5;
-  }
-  if(movement[1]) {
-    player_position.x -= 5;
-  }
-  if(movement[2]) {
-    player_position.y += 5;
-  }
-  if(movement[3]) {
-    player_position.x += 5;
-  }
+  let player_position = player.getPosition();
   socket.emit("position", {id: id, x: player_position.x, y:player_position.y});
-  rectMode(CENTER);
-  fill(255);
-  camera.drawRect(player_position.x, player_position.y, 40, 40);
+
+  player.render(camera);
+
   fill(255, 255, 0);
   for(let i=0;i<position_list.length;i++) {
+    if(position_list[i].id == id) continue;
     camera.drawRect(position_list[i].x, position_list[i].y, 40, 40);
   }
 }
 function keyPressed() {
-  toggleMovemnet(key, true);
+  playerMovement(key, 5);
 }
 function keyReleased() {
-  toggleMovemnet(key, false);
+  playerMovement(key, -5);
 }
-function toggleMovemnet(k, bool) {
+function playerMovement(k, speed) {
   switch(k) {
     case "w":
-    movement[0] = bool;
+    player.applyForce(0, -speed);
     break;
     case "a":
-    movement[1] = bool;
+    player.applyForce(-speed, 0);
     break;
     case "s":
-    movement[2] = bool;
+    player.applyForce(0, speed);
     break;
     case "d":
-    movement[3] = bool;
+    player.applyForce(speed, 0);
     break;
   }
 }
