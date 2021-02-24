@@ -1,29 +1,20 @@
-let Player = (function() {
+function Player(x, y) {
+  let m_position = createVector(x, y);
+  let m_velocity = createVector(0, 0);
 
-  let position;
-  let velocity;
+  this.applyForce = (x, y) => {
+    m_velocity.x += x;
+    m_velocity.y += y;
+  }
+  this.render = (camera) => {
+    m_position.add(m_velocity);
 
-  class Player {
-    constructor(x, y) {
-      position = createVector(x, y);
-      velocity = createVector(0, 0);
-    }
-    applyForce(x, y) {
-      velocity.x += x;
-      velocity.y += y;
-    }
-    render(camera) {
-      position.add(velocity);
-
-      rectMode(CENTER);
-      fill(255);
-      camera.drawRect(position.x, position.y, 50, 50);
-    }
-
-    getPosition() {
-      return { x: position.x, y: position.y };
-    }
+    rectMode(CENTER);
+    fill(255);
+    camera.drawEllipse(m_position.x, m_position.y, 50, 50);
   }
 
-  return Player;
-})();
+  this.getPosition = () => {
+    return { x: position.x, y: position.y };
+  }
+}

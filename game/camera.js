@@ -1,7 +1,38 @@
-let Camera = (function() {
+function Camera(x, y, w, h) {
+  let m_cameraPosition = createVector(x, y);
+  let m_cameraSize = createVector(w, h);
 
-  let m_cameraPosition;
-  let m_cameraSize;
+  this.drawEllipse = (x, y, w, h) => {
+    let position = createVector(x, y);
+    let size = createVector(w, h);
+
+    let new_coordinate = transformShapes(position, size);
+
+    position = new_coordinate.position;
+    size = new_coordinate.size;
+
+    ellipse(position.x, position.y, size.x, size.y);
+  }
+  this.drawRect = (x, y, w, h) => {
+    let position = createVector(x, y);
+    let size = createVector(w, h);
+
+    let new_coordinate = transformShapes(position, size);
+
+    position = new_coordinate.position;
+    size = new_coordinate.size;
+
+    rect(position.x, position.y, size.x, size.y);
+  }
+
+  this.resize = (w, h) => {
+    m_cameraSize.x = w;
+    m_cameraSize.y = h;
+  }
+  this.relocate = (x, y) => {
+    m_cameraPosition.x = x;
+    m_cameraPosition.y = y;
+  }
 
   function transformShapes(position, size) {
     let camera_position = createVector(m_cameraPosition.x / m_cameraSize.x, m_cameraPosition.y / m_cameraSize.y);
@@ -22,34 +53,4 @@ let Camera = (function() {
       size: new_size
     }
   }
-
-  class Camera {
-    constructor(x, y, w, h) {
-      m_cameraPosition = createVector(x, y);
-      m_cameraSize = createVector(w, h);
-    }
-    resize(w, h) {
-      m_cameraSize.x = w;
-      m_cameraSize.y = h;
-    }
-    relocate(x, y) {
-      m_cameraPosition.x = x;
-      m_cameraPosition.y = y;
-    }
-
-    drawRect(x, y, w, h) {
-      let position = createVector(x, y);
-      let size = createVector(w, h);
-
-      let new_coordinate = transformShapes(position, size);
-
-      position = new_coordinate.position;
-      size = new_coordinate.size;
-
-      rect(position.x, position.y, size.x, size.y);
-    }
-  }
-
-  return Camera;
-
-})();
+}

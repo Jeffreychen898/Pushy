@@ -4,7 +4,8 @@ let player;
 
 let socket;
 
-let position_list = [];
+let other_players = [];
+
 let id = "";
 
 function setup() {
@@ -22,30 +23,32 @@ function setup() {
 
   player = new Player(0, 0);
 
-  socket.on("get_id", getID);
   socket.on("new_position_data", getPos);
-}
-function getPos(data) {
-  position_list = data;
-}
-function getID(data) {
-  id = data;
-}
-function someone(data) {
-  position_list = data;
+  socket.on("get_id", getID);
+
+  function getID(data) {
+    id = data;
+  }
+
+  function getPos(data) {
+    other_players = [];
+    for(let i=0;i<data.length;i++) {
+      let other_one = new Others(data[i].x, data[i].y, data[i].id);
+      other_players.push(other_one);
+    }
+  }
 }
 function draw() {
   background(0);
 
   let player_position = player.getPosition();
-  socket.emit("position", {id: id, x: player_position.x, y:player_position.y});
+  socket.emit("position", {x: player_position.x, y:player_position.y});
 
   player.render(camera);
 
-  fill(255, 255, 0);
-  for(let i=0;i<position_list.length;i++) {
-    if(position_list[i].id == id) continue;
-    camera.drawRect(position_list[i].x, position_list[i].y, 40, 40);
+  for(let i=0;i<other_players.length;i++) {
+    if(other_players[i].getID() == id) continue;
+    other_players[i].render(camera);
   }
 }
 function keyPressed() {

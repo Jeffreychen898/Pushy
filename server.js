@@ -24,9 +24,10 @@ io.sockets.on("connection", (client) => {
   client.on("position", (data) => {
     //updating
     for(let i=0;i<playerDB.length;i++) {
-      if(playerDB[i].id == data.id) {
+      if(playerDB[i].id == id) {
         playerDB[i].x = data.x;
         playerDB[i].y = data.y;
+        break;
       }
     }
     //broadcast
@@ -37,7 +38,7 @@ io.sockets.on("connection", (client) => {
       if(playerDB[i].id == id) {
         playerDB.splice(i, 1);
         console.log(`${id} has disconnected`);
-        client.broadcast.emit("new_position_data", playerDB);
+        client.broadcast.emit("new_position_data", {x: playerDB.x, y: playerDB.y, id: id});
         break;
       }
     }
