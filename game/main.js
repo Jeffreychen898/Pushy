@@ -9,7 +9,7 @@ let other_players = [];
 let id = "";
 
 function setup() {
-  socket = io.connect("http://localhost:8080");
+  socket = io.connect("http://localhost:8080/");
   createCanvas(windowWidth, windowHeight);
   camera = new Camera(0, 0, 0, 0);
   //set the camera size

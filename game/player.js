@@ -15,6 +15,6 @@ function Player(x, y) {
   }
 
   this.getPosition = () => {
-    return { x: position.x, y: position.y };
+    return { x: m_position.x, y: m_position.y };
   }
 }
