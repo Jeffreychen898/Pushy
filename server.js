@@ -1,11 +1,34 @@
 const express = require("express");
 const app = express();
 const socket = require("socket.io");
+const fs = require("fs");
+const readline = require("readline");
 const PORT = 8080;
+
+let arena = [];
 
 let server = app.listen(PORT, () => {
   console.log(PORT);
+  parseMap("server_res/arena.txt");
 });
+
+function parseMap(file) {
+  let fileStream = fs.createReadStream(file);
+
+  let rl = readline.createInterface({
+    input: fileStream,
+  })
+
+  rl.on("line", function(line) {
+    let arr = [];
+    for(let i=0;i<line.length;i++) {
+      if(line.charAt(i) != " ") {
+        arr.push(line.charAt(i));
+      }
+    }
+    arena.push(arr);
+  });
+}
 
 app.use("/game", express.static("game"));
 app.get("/", (req, res) => {
@@ -37,7 +60,7 @@ io.sockets.on("connection", (client) => {
     for(let i=0;i<playerDB.length;i++) {
       if(playerDB[i].id == id) {
         playerDB.splice(i, 1);
-        console.log(`${id} has disconnected`);
+        //console.log(`${id} has disconnected`);
         client.broadcast.emit("new_position_data", {x: playerDB.x, y: playerDB.y, id: id});
         break;
       }
@@ -46,7 +69,8 @@ io.sockets.on("connection", (client) => {
 })
 
 function newClient(client) {
-  console.log(client.id);
+  //console.log(client.id);
   playerDB.push({ id: client.id, x: 0, y:0 });
   client.emit("get_id", client.id);
+  client.emit("get_map", arena);
 }
