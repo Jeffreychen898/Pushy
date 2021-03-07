@@ -31,6 +31,7 @@ function parseMap(file) {
 }
 
 app.use("/game", express.static("game"));
+app.use("/game_sprites", express.static("game_images"));
 app.get("/", (req, res) => {
   res.redirect("/game");
 })
@@ -56,6 +57,11 @@ io.sockets.on("connection", (client) => {
     //broadcast
     client.broadcast.emit("new_position_data", playerDB);
   })
+
+  client.on("new_bullet", (data) => {
+    client.broadcast.emit("new_bullet_emit", data);
+  })
+
   client.on("disconnect", () => {
     for(let i=0;i<playerDB.length;i++) {
       if(playerDB[i].id == id) {
@@ -70,7 +76,8 @@ io.sockets.on("connection", (client) => {
 
 function newClient(client) {
   //console.log(client.id);
-  playerDB.push({ id: client.id, x: 0, y:0 });
+  playerDB.push({ id: client.id, x: 0, y:0});
   client.emit("get_id", client.id);
   client.emit("get_map", arena);
+  client.emit("new_position_data", playerDB);
 }

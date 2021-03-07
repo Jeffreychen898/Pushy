@@ -24,6 +24,17 @@ function Camera(x, y, w, h) {
 
     rect(position.x, position.y, size.x, size.y);
   }
+  this.drawImage = (img, x, y, w, h) => {
+    let position = createVector(x, y);
+    let size = createVector(w, h);
+
+    let new_coordinate = transformShapes(position, size);
+
+    position = new_coordinate.position;
+    size = new_coordinate.size;
+
+    image(img, position.x, position.y, size.x, size.y);
+  }
 
   this.resize = (w, h) => {
     m_cameraSize.x = w;
@@ -32,6 +43,27 @@ function Camera(x, y, w, h) {
   this.relocate = (x, y) => {
     m_cameraPosition.x = x;
     m_cameraPosition.y = y;
+  }
+
+  this.getPosition = () => {
+    return { x: m_cameraPosition.x, y: m_cameraPosition.y };
+  }
+  this.getSize = () => {
+    return { width: m_cameraSize.x, height: m_cameraSize.y };
+  }
+
+  this.toWorldCoordinates = (x, y) => {
+    let camera_position = createVector(m_cameraPosition.x / m_cameraSize.x, m_cameraPosition.y / m_cameraSize.y);
+
+    let new_position = createVector(x / width, y / height);
+
+    new_position.x += camera_position.x - 0.5;
+    new_position.y += camera_position.y - 0.5;
+
+    new_position.x *= m_cameraSize.x;
+    new_position.y *= m_cameraSize.y;
+
+    return new_position;
   }
 
   function transformShapes(position, size) {

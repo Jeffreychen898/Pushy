@@ -8,54 +8,92 @@ function Main() {
   let m_other_players;
   let m_id;
   let m_map;
+  let m_otherBullets;
+  let m_tileMaps;
+  let m_eachTiles;
+  let m_backgroundImage;
 
   this.setup = () => {
     m_socket = io.connect("http://localhost:8080/");
-    createCanvas(windowWidth, windowHeight);
+    createCanvas(windowWidth, windowHeight, P2D);
     /* setup the camera */
     m_camera = new Camera(0, 0, 0, 0);
     setupCamera();
     /* setup the player */
     m_player = new Player(0, 0);
     m_other_players = [];
+    /* other bullets */
+    m_otherBullets = [];
     /* set the socket io callback functions */
     m_socket.on("new_position_data", newPositionData);
     m_socket.on("get_id", getID);
     m_socket.on("get_map", (data) => {
       m_map = data;
     })
+    m_socket.on("new_bullet_emit", new_bullet);
+
+    /* tilemaps */
+    m_eachTiles = [m_tileMaps.get(0, 0, 16, 16), m_tileMaps.get(16, 0, 16, 16), m_tileMaps.get(32, 0, 16, 16)];
+
+    noSmooth();
   }
 
   this.update = () => {
+    let deltaTime = 1 / frameRate();
+    if(deltaTime == Infinity) {
+      deltaTime = 1;
+    }
     /* emit the position to the server */
     let player_position = m_player.getPosition();
-    m_socket.emit("position", {x: player_position.x, y:player_position.y});
+    let dataToPass = {
+      x: player_position.x,
+      y: player_position.y,
+    };
+    m_socket.emit("position", dataToPass);
 
-    m_player.update(0);
+    m_player.update(deltaTime);
 
     /* change the camera location */
     m_camera.relocate(m_player.getPosition().x, m_player.getPosition().y);
+
+    /* bullet expiration */
+    for(let i=0;i<m_otherBullets.length;i++) {
+      if(m_otherBullets[i].isExpired()) {
+        m_otherBullets.splice(i, 1);
+        i --;
+      }
+    }
   }
 
   this.draw = () => {
     noStroke();
-    //console.log(frameRate());
     /* draw the background */
     background(0);
+    drawbackgroundWallPaper();
 
     if(m_map) {
-      for(let i=0;i<m_map.length;i++) {
-        for(let j=0;j<m_map[i].length;j++) {
-          if(m_map[i][j] == 0) {
-            fill(255, 0, 255);
-          } else if(m_map[i][j] == 1) {
-            fill(255);
-          } else if(m_map[i][j] == 2) {
-            fill(255, 0, 0);
-          } else if(m_map[i][j] == 3) {
-            fill(255, 255, 0);
+      let camera_position = m_camera.getPosition();
+      let camera_size = m_camera.getSize();
+      let starting_index = {
+        x: Math.floor((camera_position.x - camera_size.width / 2) / 100),
+        y: Math.floor((camera_position.y - camera_size.height / 2) / 100)
+      };
+      let ending_index = {
+        x: Math.floor((camera_position.x + camera_size.width / 2) / 100) + 1,
+        y: Math.floor((camera_position.y + camera_size.height / 2) / 100) + 1
+      }
+
+      for(let i=0;i<50;i++) {
+        for(let j=0;j<50;j++) {
+          if(i > -1 && j > -1 && i < 50 && j < 50) {
+            if(m_map[i][j] == 1) {
+              m_camera.drawImage(m_eachTiles[0], j * 100, i * 100, 101, 101);
+            } else if(m_map[i][j] == 2) {
+              m_camera.drawImage(m_eachTiles[1], j * 100, i * 100, 101, 101);
+            } else if(m_map[i][j] == 3) {
+              m_camera.drawImage(m_eachTiles[2], j * 100, i * 100, 101, 101);
+            }
           }
-          m_camera.drawRect(j * 100, i * 100, 101, 101);
         }
       }
     }
@@ -64,11 +102,22 @@ function Main() {
     m_player.render(m_camera);
 
     /* render the other players */
+    let deltaTime = 1 / frameRate();
     for(let i=0;i<m_other_players.length;i++) {
       if(m_other_players[i].getID() == m_id) continue;
-      console.log(m_other_players[i].getID());
       m_other_players[i].render(m_camera);
     }
+
+    /* draw the other player's bullets */
+    for(let i=0;i<m_otherBullets.length;i++) {
+      m_otherBullets[i].render(m_camera);
+    }
+  }
+
+  /* preload */
+  this.preload = () => {
+    m_tileMaps = loadImage("../game_sprites/tiles.png");
+    m_backgroundImage = loadImage("../game_sprites/background.png");
   }
 
   /* events */
@@ -83,6 +132,11 @@ function Main() {
 
   this.keyReleased = () => {
     playerMovement(key, false);
+  }
+
+  this.mousePressed = () => {
+    let bullet_information = m_player.shoot(m_camera);
+    m_socket.emit("new_bullet", bullet_information);
   }
 
   /* private methods */
@@ -113,6 +167,17 @@ function Main() {
     }
   }
 
+  function drawbackgroundWallPaper() {
+    let wallpaper_width = width;
+    let wallpaper_height = height;
+    if(width > height * 2) {
+      wallpaper_height = width / 2;
+    } else {
+      wallpaper_width = height * 2;
+    }
+    image(m_backgroundImage, 0, 0, wallpaper_width, wallpaper_height);
+  }
+
   /* socket io callback functions */
   function newPositionData(data) {
     m_other_players = [];
@@ -121,15 +186,23 @@ function Main() {
       m_other_players.push(other_one);
     }
   }
+  function new_bullet(data) {
+    let bullet_position = createVector(data.position.x, data.position.y);
+    let bullet_vector = createVector(data.vector.x, data.vector.y);
+    let bullet = new Bullet(bullet_position, bullet_vector, data.time);
+    m_otherBullets.push(bullet);
+  }
   function getID(data) {
     m_id = data;
   }
 }
 
 //====================================================================================================
-
-function setup() {
+function preload() {
   mainClass = new Main();
+  mainClass.preload();
+}
+function setup() {
   mainClass.setup();
 }
 function draw() {
@@ -141,6 +214,9 @@ function keyPressed() {
 }
 function keyReleased() {
   mainClass.keyReleased();
+}
+function mousePressed() {
+  mainClass.mousePressed();
 }
 function windowResized() {
   mainClass.windowResized();
