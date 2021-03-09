@@ -3,7 +3,7 @@ const app = express();
 const socket = require("socket.io");
 const fs = require("fs");
 const readline = require("readline");
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 let arena = [];
 
