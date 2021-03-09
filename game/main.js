@@ -18,7 +18,7 @@ function Main() {
   let m_backgroundImage;
 
   this.setup = () => {
-    m_socket = io.connect("http://localhost:8080/");
+    m_socket = io.connect(window.location.protocol+"//"+window.location.host);
     createCanvas(windowWidth, windowHeight, P2D);
 
     /* setup the camera */
