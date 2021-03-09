@@ -3,7 +3,7 @@ function Others(x, y, id) {
   let m_id = id;
 
   this.render = (camera) => {
-    fill(255, 255, 0);
+    fill(0, 0, 255);
     camera.drawEllipse(m_position.x, m_position.y, 50, 50);
   }
 

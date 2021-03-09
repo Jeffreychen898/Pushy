@@ -78,8 +78,29 @@ function Player(x, y) {
     return bullet_information;
   }
 
+  this.checkBulletCollision = (bulletPosition) => {
+    /* get the distance between bullet and player */
+    let player_bullet_distance = dist(m_position.x, m_position.y, bulletPosition.x, bulletPosition.y);
+    if(player_bullet_distance < 30) {
+      /* get the angle where the bullet is located */
+      /* using vectors because it provides me with the components(x, y) */
+      let player_bullet_angle = createVector(m_position.x - bulletPosition.x, m_position.y - bulletPosition.y);
+      player_bullet_angle.normalize();
+      player_bullet_angle.mult(10000);
+      /* push the player in that direction */
+      this.applyForce(player_bullet_angle.x, player_bullet_angle.y);
+      return true;
+    }
+    return false;
+  }
+
   this.move = (index, boolean) => {
     m_movements[index] = boolean;
+  }
+
+  this.setPosition = (positionX, positionY) => {
+    m_position.x = positionX;
+    m_position.y = positionY;
   }
 
   this.getPosition = () => {

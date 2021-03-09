@@ -1,7 +1,11 @@
 const CAM_SIZE = 700;
+const MIN_CAM_SIZE = 300;
+const MAX_CAM_SIZE = 1300;
 let mainClass;
 
 function Main() {
+  let m_cameraSize;
+  let m_actualCameraSize;
   let m_camera;
   let m_player;
   let m_socket
@@ -16,11 +20,14 @@ function Main() {
   this.setup = () => {
     m_socket = io.connect("http://localhost:8080/");
     createCanvas(windowWidth, windowHeight, P2D);
+
     /* setup the camera */
+    m_cameraSize = CAM_SIZE;
+    m_actualCameraSize = CAM_SIZE;
     m_camera = new Camera(0, 0, 0, 0);
     setupCamera();
     /* setup the player */
-    m_player = new Player(0, 0);
+    m_player = new Player(-1, -1);
     m_other_players = [];
     /* other bullets */
     m_otherBullets = [];
@@ -43,6 +50,11 @@ function Main() {
     if(deltaTime == Infinity) {
       deltaTime = 1;
     }
+
+    /* lerp the camera */
+    m_cameraSize = lerp(m_cameraSize, m_actualCameraSize, 0.4);
+    setupCamera();
+
     /* emit the position to the server */
     let player_position = m_player.getPosition();
     let dataToPass = {
@@ -61,6 +73,23 @@ function Main() {
       if(m_otherBullets[i].isExpired()) {
         m_otherBullets.splice(i, 1);
         i --;
+        continue;
+      }
+      if(m_player.checkBulletCollision(m_otherBullets[i].getPosition())) {
+        m_otherBullets.splice(i, 1);
+        i --;
+        continue;
+      }
+    }
+
+    /* if the player steps out, refresh the page */
+    let player_index_position = {
+      x: Math.floor(player_position.x / 100),
+      y: Math.floor(player_position.y / 100)
+    };
+    if(player_index_position.x > -1 && player_index_position.y > -1 && m_map) {
+      if(m_map[player_index_position.y][player_index_position.x] == 0) {
+        location.reload();
       }
     }
   }
@@ -86,6 +115,10 @@ function Main() {
       for(let i=0;i<50;i++) {
         for(let j=0;j<50;j++) {
           if(i > -1 && j > -1 && i < 50 && j < 50) {
+            if(m_map[i][j] == 8) {
+              m_player.setPosition(j * 100, i * 100);
+              m_map[i][j] = 1;
+            }
             if(m_map[i][j] == 1) {
               m_camera.drawImage(m_eachTiles[0], j * 100, i * 100, 101, 101);
             } else if(m_map[i][j] == 2) {
@@ -139,6 +172,15 @@ function Main() {
     m_socket.emit("new_bullet", bullet_information);
   }
 
+  this.mouseWheel = (delta) => {
+    m_actualCameraSize += delta / 2;
+    if(m_actualCameraSize > MAX_CAM_SIZE) {
+      m_actualCameraSize = MAX_CAM_SIZE;
+    } else if(m_actualCameraSize < MIN_CAM_SIZE) {
+      m_actualCameraSize = MIN_CAM_SIZE;
+    }
+  }
+
   /* private methods */
   function playerMovement(k, iskeydown) {
     switch(k) {
@@ -160,10 +202,10 @@ function Main() {
   function setupCamera() {
     if(width > height) {
       let aspect_ratio = height / width;
-      m_camera.resize(CAM_SIZE, aspect_ratio * CAM_SIZE);
+      m_camera.resize(m_cameraSize, aspect_ratio * m_cameraSize);
     } else {
       let aspect_ratio = width / height;
-      m_camera.resize(aspect_ratio * CAM_SIZE, CAM_SIZE);
+      m_camera.resize(aspect_ratio * m_cameraSize, m_cameraSize);
     }
   }
 
@@ -217,6 +259,9 @@ function keyReleased() {
 }
 function mousePressed() {
   mainClass.mousePressed();
+}
+function mouseWheel(e) {
+  mainClass.mouseWheel(e.delta);
 }
 function windowResized() {
   mainClass.windowResized();
